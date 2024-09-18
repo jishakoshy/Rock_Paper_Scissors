@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock, Paper, Scissors Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        let playerScore = 0;
+        let computerScore = 0;
+
+        // Function to update images based on choices
+        function updateImages(playerChoice, computerChoice) {
+            document.getElementById('playerImage').src = `/static/images/${playerChoice}.jpeg`;
+            document.getElementById('computerImage').src = `/static/images/${computerChoice}.jpeg`;
+        }
+
+        // Function to play a round of the game
+        async function play(choice) {
+            if (playerScore >= 5 || computerScore >= 5) return;  // Stop game if already finished
+
+            const response = await fetch('/play/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({ 'choice': choice })
+            });
+
+            const data = await response.json();
+
+            console.log("Player choice:", data.player_choice);
+            console.log("Computer choice:", data.computer_choice);
+
+            // Update the images based on choices
+            updateImages(data.player_choice, data.computer_choice);
+
+            // Update the game result on the screen
+            let resultText = '';
+            if (data.result === 'draw') {
+                resultText = "It's a draw!";
+            } else if (data.result === 'player') {
+                resultText = "You win this round!";
+                playerScore++;
+            } else {
+                resultText = "Computer wins this round!";
+                computerScore++;
+            }
+
+            document.getElementById('result').textContent = resultText;
+            document.getElementById('playerScore').textContent = `Player Score: ${playerScore}`;
+            document.getElementById('computerScore').textContent = `Computer Score: ${computerScore}`;
+
+            // Check for end of the game
+            if (playerScore === 5) {
+                document.getElementById('finalResult').textContent = '🎉 Player wins the game!';
+            } else if (computerScore === 5) {
+                document.getElementById('finalResult').textContent = '🤖 Computer wins the game!';
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-800 text-white min-h-screen flex items-center justify-center">
+
+    <div class="text-center space-y-8">
+        <h1 class="text-4xl font-bold">Rock, Paper, Scissors</h1>
+
+        <!-- Player's choice buttons -->
+        <div class="flex justify-center space-x-4">
+            <button onclick="play('rock')" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Rock</button>
+            <button onclick="play('paper')" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded">Paper</button>
+            <button onclick="play('scissors')" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded">Scissors</button>
+        </div>
+
+        <!-- Display images for player and computer choices -->
+        <div class="flex justify-around items-center space-x-12 mt-8">
+            <div class="flex flex-col items-center">
+                <h2 class="text-lg">Player</h2>
+                <img id="playerImage" src="/static/images/default.jpeg" alt="Player choice" class="w-24 h-24">
+            </div>
+            <div class="flex flex-col items-center">
+                <h2 class="text-lg">Computer</h2>
+                <img id="computerImage" src="/static/images/default.jpeg" alt="Computer choice" class="w-24 h-24">
+            </div>
+        </div>
+
+        <!-- Display choices and result -->
+        <div class="space-y-4 mt-8">
+            <p id="result" class="text-xl"></p>
+            <p id="playerScore" class="text-lg">Player Score: 0</p>
+            <p id="computerScore" class="text-lg">Computer Score: 0</p>
+            <p id="finalResult" class="text-2xl font-bold"></p>
+        </div>
+    </div>
+
+</body>
+</html>
